@@ -1,14 +1,13 @@
-import Assistant from "./components/Assistant"
+import "./App.css";
+import SpeechToText from "./components/SpeechToText";
+import Login from "./components/Login";
+import { useAuth } from "./providers/Auth";
+import { BASEURL } from "./modules/envirnoment";
 
 function App() {
+  const { user } = useAuth();
 
-
-  return (
-    <>
-      <h1>React App</h1>
-      <Assistant />
-    </>
-  )
+  return user ? <SpeechToText /> : <Login />;
 }
 
-export default App
+export default App;
