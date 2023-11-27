@@ -13,7 +13,7 @@ import { BASEURL } from "../modules/envirnoment";
 import { useSpeechConfig } from "../modules/token_util";
 import {io} from 'socket.io-client';
 
-const socket = io(BASEURL);
+const socket = io(BASEURL, {path: '/socket'});
 
 function SpeechToText() {
   const { user, logout } = useAuth();
