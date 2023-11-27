@@ -11,6 +11,9 @@ import {
 import axios from "axios";
 import { BASEURL } from "../modules/envirnoment";
 import { useSpeechConfig } from "../modules/token_util";
+import {io} from 'socket.io-client';
+
+const socket = io(BASEURL);
 
 function SpeechToText() {
   const { user, logout } = useAuth();
@@ -123,8 +126,8 @@ function SpeechToText() {
       
       // player.mute();
       stopPlayer();
-      disableModel();
-      enableModel();
+      // disableModel();
+      // enableModel();
       clearQueue();
       setStopFlag(false);
     }
@@ -134,43 +137,72 @@ function SpeechToText() {
   //   console.log(player)
   // }
 
-  useEffect(() => {
-    // Establish SSE connection
-    const eventSource = new EventSource(`${BASEURL}/api/speech/sse`, {withCredentials: true});
-    console.log(eventSource);
+  // useEffect(() => {
+  //   // Establish SSE connection
+  //   const eventSource = new EventSource(`${BASEURL}/api/speech/sse`, {withCredentials: true});
+  //   console.log(eventSource);
 
-    // Event listener for messages from the server
-    eventSource.onmessage = (event) => {
-      const newData = (event.data);
-      addToQueue(newData);
-      console.log(`New Data: ${newData}`);
-    };
+  //   // Event listener for messages from the server
+  //   eventSource.onmessage = (event) => {
+  //     const newData = (event.data);
+  //     addToQueue(newData);
+  //     console.log(`New Data: ${newData}`);
+  //   };
 
-    // Set the user ID when receiving the welcome message
-    eventSource.onopen = (event) => {
-      console.log(`event data is: ${JSON.stringify(event)}`);
+  //   // Set the user ID when receiving the welcome message
+  //   eventSource.onopen = (event) => {
+  //     console.log(`event data is: ${JSON.stringify(event)}`);
       
-      if (event.data) {
-        const welcomeMessage = JSON.parse(event.data);
-        console.log("Welcome Message: ", welcomeMessage);
-      }
+  //     if (event.data) {
+  //       const welcomeMessage = JSON.parse(event.data);
+  //       console.log("Welcome Message: ", welcomeMessage);
+  //     }
       
  
-    };
+  //   };
     
 
-    // Event listener for errors
-    eventSource.onerror = (event) => {
-      console.error('Error occurred:', event);
-      eventSource.close();
-    };
+  //   // Event listener for errors
+  //   eventSource.onerror = (event) => {
+  //     console.error('Error occurred:', event);
+  //     eventSource.close();
+  //   };
 
-    // Cleanup on component unmount
-    return () => {
-      eventSource.close();
-    };
-  }, []); // Empty dependency array ensures the effect runs only once
+  //   // Cleanup on component unmount
+  //   return () => {
+  //     eventSource.close();
+  //   };
+  // }, []); // Empty dependency array ensures the effect runs only once
 
+  useEffect(()=> {
+    socket.on('connect', ()=> {
+        console.log('connected to server');
+    });
+
+    socket.on('disconnect', ()=> {
+        console.log('disconnected from server');
+    });
+
+    socket.on('enqueue', (content)=> {
+        addToQueue(content);
+    });
+
+    return ()=> {
+        socket.off('connect');
+        socket.off('disconnect');
+        socket.off('message');
+    }
+
+}, []);
+
+useEffect(()=> {
+
+  const lastEntry = conversation[conversation.length - 1];
+  if(lastEntry && lastEntry.role === 'user') {
+      socket.emit('user-query', conversation);
+  }
+
+}, [conversation]);
 
   return (
     <>

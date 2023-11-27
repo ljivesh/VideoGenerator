@@ -57,21 +57,21 @@ export const useConversation = () => {
   };
 
   //send conversation to server
-  useEffect(() => {
-    const sendConversation = async () => {
-      const response = await axios.post("/api/speech/post-conversation", {
-        conversation: conversation,
-      });
-      console.log(`Final response: ${response.data}`);
-    };
+  // useEffect(() => {
+  //   const sendConversation = async () => {
+  //     const response = await axios.post("/api/speech/post-conversation", {
+  //       conversation: conversation,
+  //     });
+  //     console.log(`Final response: ${response.data}`);
+  //   };
 
-    //if last object in conversation array is user response, send conversation to server
-    if (conversation.slice(-1)[0]?.role === "user") {
-      console.log(conversation);
-      sendConversation();
+  //   //if last object in conversation array is user response, send conversation to server
+  //   if (conversation.slice(-1)[0]?.role === "user") {
+  //     console.log(conversation);
+  //     sendConversation();
 
-    }
-  }, [conversation]);
+  //   }
+  // }, [conversation]);
 
 
   return {
