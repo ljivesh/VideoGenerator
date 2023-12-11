@@ -28,6 +28,23 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  const register = async (email, password) => {
+    // Your register logic here
+    try {
+      const user = { email, password };
+      const response = await axios.post("/api/user/register", user);
+      console.log("here");
+      console.log(response.data);
+
+      return response.data.message;
+
+    } catch (error) {
+      console.error(error);
+      console.log(error.response.data.message);
+      return error.response.data.message;
+    }
+  }
+
   const logout = async () => {
     try {
       // Send a request to the logout endpoint
@@ -48,6 +65,7 @@ const AuthProvider = ({ children }) => {
     user,
     login,
     logout,
+    register
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

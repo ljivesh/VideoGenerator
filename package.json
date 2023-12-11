@@ -10,13 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-three/drei": "^9.89.0",
+    "@react-three/fiber": "^8.15.11",
+    "@types/three": "^0.159.0",
     "@uidotdev/usehooks": "^2.4.1",
     "axios": "^1.6.2",
     "cookie-parser": "^1.4.6",
+    "lodash": "^4.17.21",
     "microsoft-cognitiveservices-speech-sdk": "^1.33.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "socket.io-client": "^4.7.2",
+    "three": "^0.159.0",
     "universal-cookie": "^6.1.1"
   },
   "devDependencies": {

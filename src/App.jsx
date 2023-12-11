@@ -1,5 +1,6 @@
 import "./App.css";
 import SpeechToText from "./components/SpeechToText";
+// import Avatar from "./components/Avatar";
 import Login from "./components/Login";
 import { useAuth } from "./providers/Auth";
 import { BASEURL } from "./modules/envirnoment";

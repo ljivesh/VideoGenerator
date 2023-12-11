@@ -55,3 +55,10 @@
 .loginForm button:hover {
   background-color: #0069d9;
 }
+
+.toggle {
+  margin-top: 1rem;
+  font-size: 0.8rem;
+  color: #007bff;
+  cursor: pointer;
+}
