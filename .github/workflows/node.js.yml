@@ -13,8 +13,8 @@ jobs:
     runs-on: self-hosted
 
     env:
-      VITE_SERVER_BASE_URL: https://menma.ninja/api
-      VITE_SOCKET_URL: https://menma.ninja/
+      VITE_SERVER_BASE_URL: http://ec2-13-235-99-173.ap-south-1.compute.amazonaws.com/api
+      VITE_SOCKET_URL: http://ec2-13-235-99-173.ap-south-1.compute.amazonaws.com/
     
     strategy:
       matrix:
