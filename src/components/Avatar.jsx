@@ -67,7 +67,7 @@ export function Model(props) {
         // setCurrentAnimation('explaining');
 
       props.lipsync.firstFrame.forEach((value, index) =>
-        lerpMorphTargets(facialPositionMap[index], value, 0.5)
+        lerpMorphTargets(facialPositionMap[index], value*0.60, 0.5)
       );
       props.lipsync.removeFrame();
     } else {
