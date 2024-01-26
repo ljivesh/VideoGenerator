@@ -320,7 +320,10 @@ function SpeechToText({ greeted, handleGreeted }) {
       <h1>{!listening ? "Quite..." : "Listening..."}</h1>
       <h2>Logged in as: {user.email}</h2>
       <div>
-        <button onClick={speakHandler}>
+        <button onClick={()=> {
+          speakHandler();
+          greet();
+        }}>
           {!listening ? "Start Speaking" : "Stop Speaking"}
         </button>
         {/* <button onClick={clearResult} >Clear</button> */}

@@ -125,9 +125,9 @@ export function Model(props) {
   });
 
 
-  useEffect(()=> {
-    props.greet();
-  }, []);
+  // useEffect(()=> {
+  //   props.greet();
+  // }, []);
 
   return (
     <group {...props} dispose={null} ref={group}>
