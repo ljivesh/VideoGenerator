@@ -14,10 +14,10 @@ import { io } from "socket.io-client";
 import { Canvas } from "@react-three/fiber";
 import { Model as Avatar } from "./Avatar";
 import { Environment, OrbitControls } from "@react-three/drei";
-import {GREETING, AGENT_ID} from '../modules/envirnoment.js';
+import { GREETING, AGENT_ID } from "../modules/envirnoment.js";
 
 const agentId = AGENT_ID;
-const socket = io(SOCKETURL, { path: "/socket", query:{agentId}  });
+const socket = io(SOCKETURL, { path: "/socket", query: { agentId } });
 
 const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US">
 <voice name="en-US-JasonNeural"  >
@@ -26,8 +26,8 @@ const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" x
 __TEXT__
 </voice>
 </speak>`;
-const greetingMessage = GREETING || 'Hello!, I am a virtual assistant, I am here to assist you.';
-
+const greetingMessage =
+  GREETING || "Hello!, I am a virtual assistant, I am here to assist you.";
 
 function SpeechToText({ greeted, handleGreeted }) {
   const { user, logout } = useAuth();
@@ -111,7 +111,12 @@ function SpeechToText({ greeted, handleGreeted }) {
     };
 
     const logPlay = (e) => {
-      !greeted ? setCurrentAnimation("wave") : setCurrentAnimation("idle");
+      if (!greeted) {
+        setCurrentAnimation("wave");
+        setTimeout(() => setCurrentAnimation("idle"), [5000]);
+      } else {
+        setCurrentAnimation("idle");
+      }
 
       if (!greeted) handleGreeted();
 
@@ -128,7 +133,7 @@ function SpeechToText({ greeted, handleGreeted }) {
 
       console.log(`Playback waiting for new data: ${e.timeStamp}`);
       playerWaitRef.current = e.timeStamp;
-    //   console.log(wordQueue.map((word) => word.audioOffset / 10000));
+      //   console.log(wordQueue.map((word) => word.audioOffset / 10000));
     };
 
     player.internalAudio?.addEventListener("timeupdate", logTime);
@@ -220,7 +225,7 @@ function SpeechToText({ greeted, handleGreeted }) {
       speechSynthesizer.speakSsmlAsync(
         ssml.replace("__TEXT__", first),
         (result) => {
-        //   console.log(result);
+          //   console.log(result);
         }
       );
 
@@ -244,7 +249,7 @@ function SpeechToText({ greeted, handleGreeted }) {
       // disableModel();
       // enableModel();
       clearQueue();
-            clearWordQueue();
+      clearWordQueue();
       clearFrameQueue();
       setStopFlag(false);
     }
