@@ -9,7 +9,7 @@ import { BASEURL } from "./modules/envirnoment";
 function App() {
 
 
-   const [greeted, setGreeted] = useState(false);
+   const [greeted, setGreeted] = useState(true);
 
   const handleGreeted = () => {
     console.log("Greeted now");

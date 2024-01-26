@@ -244,6 +244,7 @@ function SpeechToText({ greeted, handleGreeted }) {
       // disableModel();
       // enableModel();
       clearQueue();
+            clearWordQueue();
       clearFrameQueue();
       setStopFlag(false);
     }
