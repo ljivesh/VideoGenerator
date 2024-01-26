@@ -10,14 +10,15 @@ import * as THREE from "three";
 import { facialPositionMap, animationMap } from "../mappings.js";
 
 export function Model(props) {
-  const { nodes, materials, scene } = useGLTF("/models/menma-model.glb");
+  const { nodes, materials, scene } = useGLTF("https://menma-s3.s3.ap-south-1.amazonaws.com/models/menma-model.glb");
 
-
+  const [blink, setBlink] = useState(false);
 
   const lerpMorphTargets = (target, value, speed) => {
     scene.traverse((child) => {
       if (child.isSkinnedMesh && child.morphTargetDictionary) {
         const index = child.morphTargetDictionary[target];
+        // console.log(index);
         // console.log(child.morphTargetInfluences[index]);
 
         if (
@@ -35,30 +36,77 @@ export function Model(props) {
     });
   };
 
+  useEffect(()=> {
+    if(!props.lipsync.firstFrame) {
+      lerpMorphTargets("mouthSmileLeft", 0.3, 0.5 );
+      lerpMorphTargets("mouthSmileRight", 0.3, 0.5 );
+    } 
+  }, [props.lipsync.firstFrame]);
+
+  useEffect(()=> {console.log(scene)}, [])
+
   const resetMorphTargets = () => {
+
+
+    const ignoreList = ["eyeBlinkLeft", "eyeBlinkRight", "mouthSmileLeft", "mouthSmileRight"];
+
     scene.traverse((child) => {
       if (child.isSkinnedMesh && child.morphTargetDictionary) {
+        // console.log(child.morphTargetDictionary);
+        
+
+        const ignoredIndices = ignoreList.map((target)=> child.morphTargetDictionary[target]);
+
+
+        // console.log(eyeLeftIndex, eyeRightIndex);
         const indices = Object.values(child.morphTargetDictionary);
 
         indices.forEach((index) => {
-          child.morphTargetInfluences[index] = 0;
+          // console.log(index);
+          if (!ignoredIndices.includes(index)) child.morphTargetInfluences[index] = 0;
         });
       }
     });
   };
 
-  const { animations } = useGLTF("/animations/menma-animations-2.glb");
+  const { animations } = useGLTF("https://menma-s3.s3.ap-south-1.amazonaws.com/animations/menma-animations-5.glb");
   // console.log(animations);
-  const [currentAnimation, setCurrentAnimation] = useState("idle");
 
   const group = useRef();
   const { actions } = useAnimations(animations, group);
 
   useEffect(() => {
-    actions[currentAnimation].reset().fadeIn(0.5).play();
+    actions[props.currentAnimation].reset().fadeIn(0.5).play();
 
-    return () => actions[currentAnimation].fadeOut(0.5);
-  }, [currentAnimation]);
+    return () => actions[props.currentAnimation].fadeOut(0.5);
+  }, [props.currentAnimation]);
+
+
+
+  useFrame(() => {
+    lerpMorphTargets("eyeBlinkLeft", blink ? 0.75 : 0, 0.5);
+    lerpMorphTargets("eyeBlinkRight", blink ? 0.75 : 0, 0.5);
+  });
+
+
+
+  useEffect(() => {
+    let blinkTimeout;
+    
+    const nextBlink = () => {
+      blinkTimeout = setTimeout(() => {
+        setBlink(true);
+        setTimeout(() => {
+          setBlink(false);
+          nextBlink();
+        }, 200);
+      }, THREE.MathUtils.randInt(1000, 5000));
+    };
+
+    nextBlink();
+
+    return () => clearTimeout(blinkTimeout);
+  }, []);
 
 
   useFrame(() => {
@@ -75,6 +123,11 @@ export function Model(props) {
       resetMorphTargets();
     }
   });
+
+
+  useEffect(()=> {
+    props.greet();
+  }, []);
 
   return (
     <group {...props} dispose={null} ref={group}>
@@ -145,4 +198,4 @@ export function Model(props) {
   );
 }
 
-useGLTF.preload("/models/menma-model.glb");
+useGLTF.preload("https://menma-s3.s3.ap-south-1.amazonaws.com/models/menma-model.glb");

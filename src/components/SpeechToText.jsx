@@ -14,8 +14,10 @@ import { io } from "socket.io-client";
 import { Canvas } from "@react-three/fiber";
 import { Model as Avatar } from "./Avatar";
 import { Environment, OrbitControls } from "@react-three/drei";
+import {GREETING, AGENT_ID} from '../modules/envirnoment.js';
 
-const socket = io(SOCKETURL, { path: "/socket" });
+const agentId = AGENT_ID;
+const socket = io(SOCKETURL, { path: "/socket", query:{agentId}  });
 
 const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US">
 <voice name="en-US-JasonNeural"  >
@@ -24,10 +26,19 @@ const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" x
 __TEXT__
 </voice>
 </speak>`;
+const greetingMessage = GREETING || 'Hello!, I am a virtual assistant, I am here to assist you.';
 
-function SpeechToText() {
+
+function SpeechToText({ greeted, handleGreeted }) {
   const { user, logout } = useAuth();
   const { speechConfig } = useSpeechConfig();
+
+  const [currentAnimation, setCurrentAnimation] = useState("idle");
+
+  const convoID = useRef(0);
+
+  const playerStartRef = useRef(0);
+  const playerWaitRef = useRef(0);
 
   const {
     queue,
@@ -43,9 +54,22 @@ function SpeechToText() {
     add: addFrame,
     remove: removeFrame,
     first: firstFrame,
-    clear: clearFrameQueue
+    clear: clearFrameQueue,
   } = useQueue();
 
+  const {
+    queue: wordQueue,
+    add: addWord,
+    remove: removeWord,
+    first: firstWord,
+    clear: clearWordQueue,
+  } = useQueue([]);
+
+  const greet = () => {
+    if (!greeted) {
+      addToQueue(greetingMessage);
+    }
+  };
 
   const { conversation, disableModel, enableModel, addToConversation } =
     useConversation();
@@ -63,15 +87,78 @@ function SpeechToText() {
     );
   };
 
+  const consumeWords = (currentTime) => {
+    if (!firstWord) {
+      // console.log("Word queue empty");
+      return;
+    }
+    // console.log(firstWord);
+    // console.log(currentTime, firstWord.audioOffset/10000, currentTime > firstWord.audioOffset/10000);
+    if (currentTime > firstWord.audioOffset / 10000) {
+      // console.log(firstWord.text);
+      addToConversation(firstWord.text, "assistant");
+      removeWord();
+      // consumeWords(currentTime);
+    }
+  };
+
+  useEffect(() => {
+    const logTime = (e) => {
+      if (playerStartRef.current > playerWaitRef.current) {
+        // console.log(e.timeStamp - playerStartRef.current);
+        consumeWords(e.timeStamp - playerStartRef.current);
+      }
+    };
+
+    const logPlay = (e) => {
+      !greeted ? setCurrentAnimation("wave") : setCurrentAnimation("idle");
+
+      if (!greeted) handleGreeted();
+
+      console.log(`Playback started at: ${e.timeStamp}`);
+      playerStartRef.current = e.timeStamp;
+    };
+
+    const logEnd = (e) => {
+      // console.log(`Playback ended at: ${e.timeStamp}`);
+    };
+
+    const logWaiting = (e) => {
+      setCurrentAnimation("idle");
+
+      console.log(`Playback waiting for new data: ${e.timeStamp}`);
+      playerWaitRef.current = e.timeStamp;
+    //   console.log(wordQueue.map((word) => word.audioOffset / 10000));
+    };
+
+    player.internalAudio?.addEventListener("timeupdate", logTime);
+    player.internalAudio?.addEventListener("playing", logPlay);
+    player.internalAudio?.addEventListener("waiting", logWaiting);
+    // player.internalAudio?.addEventListener("ended", logEnd);
+
+    return () => {
+      player.internalAudio.removeEventListener("timeupdate", logTime);
+      player.internalAudio?.removeEventListener("playing", logPlay);
+      player.internalAudio?.removeEventListener("waiting", logWaiting);
+      // player.internalAudio?.removeEventListener("ended", logEnd);
+    };
+  }, [player, wordQueue, firstWord]);
+
   useEffect(() => {
     if (speechRecognizerRef.current) {
       speechRecognizerRef.current.recognized = (s, e) => {
         if (e.result.reason === ResultReason.RecognizedSpeech) {
-          setStopFlag(true);
-
+          //   setStopFlag(true);
+          convoID.current = convoID.current + 1;
           console.log(e.result.text);
           addToConversation(e.result.text, "user");
         }
+      };
+
+      speechRecognizerRef.current.recognizing = (s, e) => {
+        console.log("Recognizing your input");
+        setCurrentAnimation("noddiing");
+        setStopFlag(true);
       };
 
       //speech recognition canceled event
@@ -110,17 +197,18 @@ function SpeechToText() {
   ]);
 
   useEffect(() => {
-    if(speechSynthesizer) {
-      speechSynthesizer.visemeReceived = (s, e) => { 
-
+    if (speechSynthesizer) {
+      speechSynthesizer.visemeReceived = (s, e) => {
         const frames = JSON.parse(e.animation).BlendShapes;
-        console.log(`Viseme received:`, JSON.parse(e.animation).BlendShapes);
-        frames.forEach(frame=> addFrame(frame));
-      }
-
-
+        // console.log(`Viseme received:`, JSON.parse(e.animation).BlendShapes);
+        frames.forEach((frame) => addFrame(frame));
+      };
+      speechSynthesizer.wordBoundary = (s, e) => {
+        // console.log(e);
+        // addToConversation(e.text, "assistant");
+        addWord(e);
+      };
     }
-    
   }, [speechSynthesizer]);
 
   useEffect(() => {
@@ -132,11 +220,11 @@ function SpeechToText() {
       speechSynthesizer.speakSsmlAsync(
         ssml.replace("__TEXT__", first),
         (result) => {
-          console.log(result);
+        //   console.log(result);
         }
       );
 
-      addToConversation(first, "assistant");
+      //   addToConversation(first, "assistant");
       removeFromQueue();
     }
   }, [
@@ -159,7 +247,14 @@ function SpeechToText() {
       clearFrameQueue();
       setStopFlag(false);
     }
-  }, [stopFlag, player, clearQueue, disableModel, enableModel, clearFrameQueue]);
+  }, [
+    stopFlag,
+    player,
+    clearQueue,
+    disableModel,
+    enableModel,
+    clearFrameQueue,
+  ]);
 
   useEffect(() => {
     socket.on("connect", () => {
@@ -170,8 +265,13 @@ function SpeechToText() {
       console.log("disconnected from server");
     });
 
-    socket.on("enqueue", (content) => {
-      addToQueue(content);
+    socket.on("enqueue", (data) => {
+      if (!stopFlag && data.id === convoID.current) {
+        console.log(data);
+        addToQueue(data.content);
+      } else {
+        console.log("Garbage", data);
+      }
     });
 
     return () => {
@@ -184,9 +284,25 @@ function SpeechToText() {
   useEffect(() => {
     const lastEntry = conversation[conversation.length - 1];
     if (lastEntry && lastEntry.role === "user") {
-      socket.emit("user-query", conversation);
+      socket.emit("user-query", {
+        conversation: conversation,
+        convoId: convoID.current,
+      });
     }
   }, [conversation]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        listening && speakHandler();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [listening]);
 
   return (
     <>
@@ -198,22 +314,39 @@ function SpeechToText() {
         </button>
         {/* <button onClick={clearResult} >Clear</button> */}
       </div>
-      <div style={{display: 'flex', justifyContent: 'center', alignItems: 'center'}} >
-
-      <div style={{ width: "60vw", height: "60vh", margin: 20, border: '2px solid gray' }}>
-        <Canvas
-          camera={{
-            position: [0, 0, 8],
-            fov: 11,
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div
+          style={{
+            width: "60vw",
+            height: "60vh",
+            margin: 20,
+            border: "2px solid gray",
           }}
         >
-                <color attach="background" args={["#ececec"]} />
-                <Avatar position={[0, -2.9, 0]} scale={1.9}  lipsync={{frameQueue, removeFrame, firstFrame}} />
-                <Environment preset="sunset" />
-                <OrbitControls />
-
-        </Canvas>
-      </div>
+          <Canvas
+            camera={{
+              position: [0, 0, 8],
+              fov: 11,
+            }}
+          >
+            <color attach="background" args={["#ececec"]} />
+            <Avatar
+              position={[0, -2.9, 0]}
+              scale={1.9}
+              lipsync={{ frameQueue, removeFrame, firstFrame }}
+              currentAnimation={currentAnimation}
+              greet={greet}
+            />
+            <Environment preset="sunset" />
+            <OrbitControls />
+          </Canvas>
+        </div>
       </div>
       {conversation.map((chat, idx) => (
         <div
