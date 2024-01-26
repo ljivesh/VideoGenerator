@@ -217,20 +217,25 @@ function SpeechToText({ greeted, handleGreeted }) {
   }, [speechSynthesizer]);
 
   useEffect(() => {
-    if (queueSize > 0 && !stopFlag) {
-      console.log(queue);
-      player.unmute();
+    // console.log(speechSynthesizer);
+    if(speechSynthesizer) {
 
-      // speechSynthesizer.speakTextAsync(first);
-      speechSynthesizer.speakSsmlAsync(
-        ssml.replace("__TEXT__", first),
-        (result) => {
-          //   console.log(result);
-        }
-      );
 
-      //   addToConversation(first, "assistant");
-      removeFromQueue();
+      if (queueSize > 0 && !stopFlag) {
+        console.log(queue);
+        player.unmute();
+  
+        // speechSynthesizer.speakTextAsync(first);
+        speechSynthesizer.speakSsmlAsync(
+          ssml.replace("__TEXT__", first),
+          (result) => {
+            //   console.log(result);
+          }
+        );
+  
+        //   addToConversation(first, "assistant");
+        removeFromQueue();
+      }
     }
   }, [
     queueSize,
