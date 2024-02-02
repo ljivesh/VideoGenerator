@@ -15,12 +15,13 @@ import { Canvas } from "@react-three/fiber";
 import { Model as Avatar } from "./Avatar";
 import { Environment, OrbitControls } from "@react-three/drei";
 import { GREETING, AGENT_ID } from "../modules/envirnoment.js";
+import { voiceMappings } from "../mappings.js";
 
 const agentId = AGENT_ID;
 const socket = io(SOCKETURL, { path: "/socket", query: { agentId } });
 
 const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="en-US">
-<voice name="en-US-JasonNeural"  >
+<voice name="__VOICE__"  >
 <mstts:viseme type="FacialExpression"/>
 
 __TEXT__
@@ -32,6 +33,10 @@ const greetingMessage =
 function SpeechToText({ greeted, handleGreeted }) {
   const { user, logout } = useAuth();
   const { speechConfig } = useSpeechConfig();
+
+  const [voice, setVoice] = useState("hi-IN-MadhurNeural");
+
+  const [userInput, setUserInput] = useState("");
 
   const [currentAnimation, setCurrentAnimation] = useState("idle");
 
@@ -82,9 +87,10 @@ function SpeechToText({ greeted, handleGreeted }) {
   const [stopFlag, setStopFlag] = useState(false);
 
   const enQueue = () => {
-    addToQueue(
-      "You added a very big string in the queue, I am currently speaking this string"
-    );
+    if (userInput.length !== 0) {
+      addToQueue(userInput);
+      setUserInput("");
+    }
   };
 
   const consumeWords = (currentTime) => {
@@ -218,21 +224,19 @@ function SpeechToText({ greeted, handleGreeted }) {
 
   useEffect(() => {
     // console.log(speechSynthesizer);
-    if(speechSynthesizer) {
-
-
+    if (speechSynthesizer) {
       if (queueSize > 0 && !stopFlag) {
         console.log(queue);
         player.unmute();
-  
+
         // speechSynthesizer.speakTextAsync(first);
         speechSynthesizer.speakSsmlAsync(
-          ssml.replace("__TEXT__", first),
+          ssml.replace("__TEXT__", first).replace("__VOICE__", voice),
           (result) => {
             //   console.log(result);
           }
         );
-  
+
         //   addToConversation(first, "assistant");
         removeFromQueue();
       }
@@ -320,13 +324,32 @@ function SpeechToText({ greeted, handleGreeted }) {
       <h1>{!listening ? "Quite..." : "Listening..."}</h1>
       <h2>Logged in as: {user.email}</h2>
       <div>
-        <button onClick={()=> {
-          speakHandler();
-          greet();
-        }}>
+        <button
+          onClick={() => {
+            speakHandler();
+            greet();
+          }}
+        >
           {!listening ? "Start Speaking" : "Stop Speaking"}
         </button>
         {/* <button onClick={clearResult} >Clear</button> */}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 10,
+          justifyContent: "center",
+          paddingTop: "10px",
+        }}
+      >
+        <label>Select the language</label>
+        <select value={voice} onChange={(e) => setVoice(e.target.value)}>
+          {voiceMappings.map((voice) => (
+            <option key={voice.id} value={voice.id}>
+              {voice.title}
+            </option>
+          ))}
+        </select>
       </div>
       <div
         style={{
@@ -362,6 +385,23 @@ function SpeechToText({ greeted, handleGreeted }) {
           </Canvas>
         </div>
       </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 10,
+        }}
+      >
+        <textarea
+          style={{ height: "100px", width: "60vw" }}
+          value={userInput}
+          onInput={(e) => setUserInput(e.target.value)}
+        />
+        <button onClick={enQueue}>Speak</button>
+      </div>
+
       {conversation.map((chat, idx) => (
         <div
           key={idx}
@@ -380,7 +420,6 @@ function SpeechToText({ greeted, handleGreeted }) {
         </div>
       ))}
       <button onClick={logout}>Logout</button>
-      <button onClick={enQueue}>Enqueue</button>
     </>
   );
 }
