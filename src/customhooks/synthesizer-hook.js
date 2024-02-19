@@ -29,7 +29,7 @@ export const useSynthesize = (speechConfig) => {
 
   const speechSynthesizer = useMemo(() => {
     if (speechConfig && audioConfig)
-      return new SpeechSynthesizer(speechConfig, audioConfig);
+      return new SpeechSynthesizer(speechConfig, null);
   }, [speechConfig, audioConfig]);
 
 

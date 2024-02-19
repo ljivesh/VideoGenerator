@@ -109,8 +109,17 @@ export function Model(props) {
   }, []);
 
 
+  const firstFrameProcessedRef= useRef(false);
   useFrame(() => {
-    if (props.lipsync.firstFrame) {
+    if (props.lipsync.firstFrame && props.audioDurationRef.current) {
+      
+      if(!firstFrameProcessedRef.current) {
+        firstFrameProcessedRef.current = true;
+        console.log(props.audioDurationRef.current);
+        props.toggleRecording();
+        setTimeout(()=>  props.toggleRecording(), [props.audioDurationRef.current/10000 + 500]);
+      }
+
         // const choice = Math.floor(Math.random()*3);
         // setCurrentAnimation('explaining');
 
@@ -119,6 +128,7 @@ export function Model(props) {
       );
       props.lipsync.removeFrame();
     } else {
+      firstFrameProcessedRef.current = false;
         // setCurrentAnimation('idle');
       resetMorphTargets();
     }
